@@ -206,211 +206,220 @@ const ExpenseSharingApp = () => {
   };
 
   return (
-    <div className="w-full min-h-screen p-10 bg-gray-50 flex flex-col items-center">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
-        <p className="text-gray-600">
-          Yay! 🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
-        </p>
-      </div>
-
-      {/* Add New Expense */}
-      <div className="bg-gray-50 p-6 rounded-lg mb-8 shadow hover:shadow-md transition-all duration-300">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Plus size={20} />
-          Add New Expense
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <input
-            type="text"
-            placeholder="Expense description"
-            value={newExpense.description}
-            onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-            className="p-2 border rounded-lg"
-          />
-          <input
-            type="number"
-            placeholder="Amount"
-            value={newExpense.amount}
-            onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
-            className="p-2 border rounded-lg"
-          />
-          <select
-            value={newExpense.paidBy}
-            onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })}
-            className="p-2 border rounded-lg"
-          >
-            <option value="">-- Select Payer --</option>
-            {housemates.map(person => (
-              <option key={person} value={person}>
-                {person}
-              </option>
-            ))}
-          </select>
+    <div className="w-screen min-h-screen bg-gradient-to-r from-purple-50 via-white to-green-50 flex justify-center items-start p-10">
+      <div className="w-full max-w-7xl bg-white rounded-lg shadow-lg p-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
+          <p className="text-gray-600 text-lg">
+            Yay! 🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-          {housemates.map(person => (
-            <div key={person} className="p-3 border rounded-lg hover:bg-gray-50 transition">
-              <p className="font-medium text-sm mb-2">{person}</p>
-              <select
-                value={newExpense.participations[person]}
-                onChange={e =>
-                  setNewExpense({
-                    ...newExpense,
-                    participations: { ...newExpense.participations, [person]: e.target.value }
-                  })
-                }
-                className="w-full p-1 border rounded text-sm"
-              >
-                <option value="out">🚫 Out</option>
-                <option value="choose">📝 Choose</option>
-                <option value="use">🍽 Use</option>
-                <option value="gift">🎁 Gift</option>
-              </select>
-            </div>
-          ))}
-        </div>
-
-        <button
-          onClick={addExpense}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2 transition"
-        >
-          <Plus size={16} />
-          Add Expense
-        </button>
-        <p className="text-sm text-gray-500 mt-2">🐣 Psst... You can always edit later. Nothing’s permanent here.</p>
-      </div>
-
-      {/* Expenses List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 w-full max-w-6xl">
-        {expenses.map(expense => {
-          const splits = calculateSplit(expense);
-
-          return (
-            <div
-              key={expense.id}
-              className="bg-white border rounded-lg p-4 shadow hover:shadow-md transition-all duration-300"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-semibold text-lg">{expense.description}</h3>
-                  <p className="text-gray-600">€{expense.amount.toFixed(2)} paid by {expense.paidBy}</p>
-                </div>
-                <button
-                  onClick={() => deleteExpense(expense.id)}
-                  className="text-red-500 hover:text-red-700 transition"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                {housemates.map(person => (
-                  <div key={person} className="p-3 border rounded-lg hover:bg-gray-50 transition">
-                    <p className="font-medium text-sm mb-2">{person}</p>
-                    <select
-                      value={expense.participations[person]}
-                      onChange={e => updateParticipation(expense.id, person, e.target.value)}
-                      className="w-full p-1 border rounded text-sm mb-2"
-                    >
-                      <option value="out">🚫 Out</option>
-                      <option value="choose">📝 Choose</option>
-                      <option value="use">🍽 Use</option>
-                      <option value="gift">🎁 Gift</option>
-                    </select>
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${getStatusColor(
-                        expense.participations[person]
-                      )}`}
-                    >
-                      {expense.participations[person]}
-                    </span>
-                    {expense.participations[person] !== 'out' && (
-                      <div className="mt-2">
-                        <input
-                          type="number"
-                          placeholder="Custom amount"
-                          value={expense.customAmounts?.[person] || ''}
-                          onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
-                          className="w-full p-1 border rounded text-xs"
-                        />
-                        <p className="text-xs text-gray-600 mt-1">
-                          Split: €{splits[person]?.toFixed(2) || '0.00'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Settlements */}
-      {expenses.length > 0 && (
-        <div className="bg-green-50 p-6 rounded-lg shadow hover:shadow-md transition">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Calculator size={20} />
-            Settlement Summary
+        {/* Add New Expense */}
+        <div className="bg-gray-50 p-6 rounded-lg mb-8 shadow hover:shadow-lg transition-all duration-300">
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+            <Plus size={20} />
+            Add New Expense
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <Users size={16} />
-                Current Balances
-              </h3>
-              <div className="space-y-2">
-                {Object.entries(calculateBalances()).map(([person, balance]) => (
-                  <div
-                    key={person}
-                    className="flex justify-between items-center p-2 bg-white rounded hover:bg-gray-50 transition"
-                  >
-                    <span className="font-medium">{person}</span>
-                    <span
-                      className={`font-semibold ${
-                        balance > 0
-                          ? 'text-green-600'
-                          : balance < 0
-                          ? 'text-red-600'
-                          : 'text-gray-600'
-                      }`}
-                    >
-                      €{balance.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Expense description"
+              value={newExpense.description}
+              onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
+              className="p-2 border rounded-lg"
+            />
+            <input
+              type="number"
+              placeholder="Amount"
+              value={newExpense.amount}
+              onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
+              className="p-2 border rounded-lg"
+            />
+            <select
+              value={newExpense.paidBy}
+              onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })}
+              className="p-2 border rounded-lg"
+            >
+              <option value="">-- Select Payer --</option>
+              {housemates.map(person => (
+                <option key={person} value={person}>
+                  {person}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div>
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <DollarSign size={16} />
-                Required Payments
-              </h3>
-              <div className="space-y-2">
-                {calculateSettlements().map((settlement, index) => (
-                  <div key={index} className="p-2 bg-white rounded hover:bg-gray-50 transition">
-                    <span className="font-medium">{settlement.from}</span>
-                    <span className="text-gray-600"> pays </span>
-                    <span className="font-medium">{settlement.to}</span>
-                    <span className="text-gray-600"> → </span>
-                    <span className="font-semibold text-green-600">
-                      €{settlement.amount.toFixed(2)}
-                    </span>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            {housemates.map(person => (
+              <div key={person} className="p-3 border rounded-lg hover:bg-gray-100 transition">
+                <p className="font-medium text-sm mb-2">{person}</p>
+                <select
+                  value={newExpense.participations[person]}
+                  onChange={e =>
+                    setNewExpense({
+                      ...newExpense,
+                      participations: { ...newExpense.participations, [person]: e.target.value }
+                    })
+                  }
+                  className="w-full p-1 border rounded text-sm"
+                >
+                  <option value="out">🚫 Out</option>
+                  <option value="choose">📝 Choose</option>
+                  <option value="use">🍽 Use</option>
+                  <option value="gift">🎁 Gift</option>
+                </select>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={addExpense}
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2 transition"
+          >
+            <Plus size={16} />
+            Add Expense
+          </button>
+          <p className="text-sm text-gray-500 mt-2">
+            🐣 Psst... You can always edit later. Nothing’s permanent here.
+          </p>
+        </div>
+
+        {/* Expenses List */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {expenses.map(expense => {
+            const splits = calculateSplit(expense);
+
+            return (
+              <div
+                key={expense.id}
+                className="bg-white border rounded-lg p-4 shadow hover:shadow-lg transition-all duration-300"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">{expense.description}</h3>
+                    <p className="text-gray-600">
+                      €{expense.amount.toFixed(2)} paid by {expense.paidBy}
+                    </p>
                   </div>
-                ))}
-                {calculateSettlements().length === 0 && (
-                  <p className="text-gray-500 italic">All settled up! 🎉</p>
-                )}
+                  <button
+                    onClick={() => deleteExpense(expense.id)}
+                    className="text-red-500 hover:text-red-700 transition"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                  {housemates.map(person => (
+                    <div key={person} className="p-3 border rounded-lg hover:bg-gray-50 transition">
+                      <p className="font-medium text-sm mb-2">{person}</p>
+                      <select
+                        value={expense.participations[person]}
+                        onChange={e => updateParticipation(expense.id, person, e.target.value)}
+                        className="w-full p-1 border rounded text-sm mb-2"
+                      >
+                        <option value="out">🚫 Out</option>
+                        <option value="choose">📝 Choose</option>
+                        <option value="use">🍽 Use</option>
+                        <option value="gift">🎁 Gift</option>
+                      </select>
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${getStatusColor(
+                          expense.participations[person]
+                        )}`}
+                      >
+                        {expense.participations[person]}
+                      </span>
+                      {expense.participations[person] !== 'out' && (
+                        <div className="mt-2">
+                          <input
+                            type="number"
+                            placeholder="Custom amount"
+                            value={expense.customAmounts?.[person] || ''}
+                            onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
+                            className="w-full p-1 border rounded text-xs"
+                          />
+                          <p className="text-xs text-gray-600 mt-1">
+                            Split: €{splits[person]?.toFixed(2) || '0.00'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Settlements */}
+        {expenses.length > 0 && (
+          <div className="bg-green-50 p-6 rounded-lg shadow hover:shadow-lg transition">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Calculator size={20} />
+              Settlement Summary
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Users size={16} />
+                  Current Balances
+                </h3>
+                <div className="space-y-2">
+                  {Object.entries(calculateBalances()).map(([person, balance]) => (
+                    <div
+                      key={person}
+                      className="flex justify-between items-center p-2 bg-white rounded hover:bg-gray-50 transition"
+                    >
+                      <span className="font-medium">{person}</span>
+                      <span
+                        className={`font-semibold ${
+                          balance > 0
+                            ? 'text-green-600'
+                            : balance < 0
+                            ? 'text-red-600'
+                            : 'text-gray-600'
+                        }`}
+                      >
+                        €{balance.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <DollarSign size={16} />
+                  Required Payments
+                </h3>
+                <div className="space-y-2">
+                  {calculateSettlements().map((settlement, index) => (
+                    <div
+                      key={index}
+                      className="p-2 bg-white rounded hover:bg-gray-50 transition"
+                    >
+                      <span className="font-medium">{settlement.from}</span>
+                      <span className="text-gray-600"> pays </span>
+                      <span className="font-medium">{settlement.to}</span>
+                      <span className="text-gray-600"> → </span>
+                      <span className="font-semibold text-green-600">
+                        €{settlement.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  {calculateSettlements().length === 0 && (
+                    <p className="text-gray-500 italic">All settled up! 🎉</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
