@@ -7,7 +7,7 @@ const ExpenseSharingApp = () => {
   const [newExpense, setNewExpense] = useState({
     description: '',
     amount: '',
-    paidBy: housemates[0],
+    paidBy: '',
     participations: housemates.reduce((acc, person) => ({...acc, [person]: 'out'}), {})
   });
 
@@ -160,10 +160,13 @@ const ExpenseSharingApp = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-white">
+    <div className="max-w-6xl mx-auto p-6 pl-8 bg-white">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Housemate Expense Sharing</h1>
-        <p className="text-gray-600">Track shared expenses with participation-based splitting</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
+        <p className="text-gray-600">
+  Yay! 🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
+</p>
+
       </div>
 
       {/* Add New Expense */}
