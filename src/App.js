@@ -206,17 +206,17 @@ const ExpenseSharingApp = () => {
   };
 
   return (
-    <div className="w-screen min-h-screen bg-gradient-to-r from-purple-50 via-white to-green-50 flex justify-center items-start p-10">
-      <div className="w-full max-w-7xl bg-white rounded-lg shadow-lg p-8">
-        <div className="mb-8">
+    <div className="w-screen h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 flex justify-center items-center p-8">
+      <div className="flex flex-col w-full max-w-screen-xl bg-white rounded-xl shadow-xl p-8">
+        <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
-          <p className="text-gray-600 text-lg">
-            Yay! 🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
+          <p className="text-gray-700 text-lg">
+            🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
           </p>
         </div>
 
         {/* Add New Expense */}
-        <div className="bg-gray-50 p-6 rounded-lg mb-8 shadow hover:shadow-lg transition-all duration-300">
+        <div className="bg-gray-50 p-6 rounded-lg mb-8 shadow hover:shadow-lg transition">
           <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
             <Plus size={20} />
             Add New Expense
@@ -294,7 +294,7 @@ const ExpenseSharingApp = () => {
             return (
               <div
                 key={expense.id}
-                className="bg-white border rounded-lg p-4 shadow hover:shadow-lg transition-all duration-300"
+                className="bg-white border rounded-lg p-4 shadow hover:shadow-lg transition"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
