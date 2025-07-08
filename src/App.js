@@ -207,7 +207,7 @@ const ExpenseSharingApp = () => {
 
   return (
     <div className="w-screen min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 flex justify-center items-start p-8">
-      <div className="flex flex-col w-full max-w-screen-xl bg-white rounded-xl shadow-xl p-8">
+      <div className="flex flex-col w-full max-w-screen-lg bg-white rounded-xl shadow-xl p-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
           <p className="text-gray-700 text-lg">
@@ -253,7 +253,10 @@ const ExpenseSharingApp = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
             {housemates.map(person => (
-              <div key={person} className="p-3 border rounded-lg hover:bg-gray-100 transition">
+              <div
+                key={person}
+                className="p-3 border rounded-lg hover:bg-gray-100 transition"
+              >
                 <p className="font-medium text-sm mb-2">{person}</p>
                 <select
                   value={newExpense.participations[person]}
@@ -312,11 +315,11 @@ const ExpenseSharingApp = () => {
                 </div>
 
                 {/* Housemates row */}
-                <div className="flex flex-wrap gap-4 mb-4">
+                <div className="flex flex-wrap gap-4 justify-start">
                   {housemates.map(person => (
                     <div
                       key={person}
-                      className="flex flex-col items-center p-2 border rounded-lg hover:bg-gray-50 transition w-32"
+                      className="flex flex-col items-center p-2 border rounded-lg hover:bg-gray-50 transition flex-shrink-0 w-[150px]"
                     >
                       <p className="font-medium text-sm mb-1">{person}</p>
                       <select
