@@ -1,0 +1,344 @@
+import React, { useState } from 'react';
+import { Plus, Trash2, Calculator, Users, DollarSign } from 'lucide-react';
+
+const ExpenseSharingApp = () => {
+  const [housemates] = useState(['Person 1', 'Person 2', 'Person 3', 'Person 4', 'Person 5']);
+  const [expenses, setExpenses] = useState([]);
+  const [newExpense, setNewExpense] = useState({
+    description: '',
+    amount: '',
+    paidBy: housemates[0],
+    participations: housemates.reduce((acc, person) => ({...acc, [person]: 'out'}), {})
+  });
+
+  const addExpense = () => {
+    if (!newExpense.description || !newExpense.amount) return;
+    
+    const expense = {
+      id: Date.now(),
+      description: newExpense.description,
+      amount: parseFloat(newExpense.amount),
+      paidBy: newExpense.paidBy,
+      participations: {...newExpense.participations},
+      customAmounts: {}
+    };
+    
+    setExpenses([...expenses, expense]);
+    setNewExpense({
+      description: '',
+      amount: '',
+      paidBy: housemates[0],
+      participations: housemates.reduce((acc, person) => ({...acc, [person]: 'out'}), {})
+    });
+  };
+
+  const updateParticipation = (expenseId, person, status) => {
+    setExpenses(expenses.map(expense => 
+      expense.id === expenseId 
+        ? {...expense, participations: {...expense.participations, [person]: status}}
+        : expense
+    ));
+  };
+
+  const updateCustomAmount = (expenseId, person, amount) => {
+    setExpenses(expenses.map(expense => 
+      expense.id === expenseId 
+        ? {...expense, customAmounts: {...expense.customAmounts, [person]: parseFloat(amount) || 0}}
+        : expense
+    ));
+  };
+
+  const calculateSplit = (expense) => {
+    const participants = housemates.filter(person => expense.participations[person] !== 'out');
+    const choosers = participants.filter(person => expense.participations[person] === 'choose');
+    const users = participants.filter(person => expense.participations[person] === 'use');
+    const gifters = participants.filter(person => expense.participations[person] === 'gift');
+    
+    let amounts = {};
+    let remainingAmount = expense.amount;
+    
+    // First, handle custom amounts (mainly for gifters)
+    participants.forEach(person => {
+      if (expense.customAmounts && expense.customAmounts[person]) {
+        amounts[person] = expense.customAmounts[person];
+        remainingAmount -= expense.customAmounts[person];
+      }
+    });
+    
+    // Calculate for non-custom participants
+    const nonCustomParticipants = participants.filter(person => 
+      !expense.customAmounts || !expense.customAmounts[person]
+    );
+    
+    if (nonCustomParticipants.length > 0) {
+      const chooserCount = choosers.filter(person => 
+        !expense.customAmounts || !expense.customAmounts[person]
+      ).length;
+      const userCount = users.filter(person => 
+        !expense.customAmounts || !expense.customAmounts[person]
+      ).length;
+      
+      // Default: choosers get 15% discount, users cover the difference
+      const totalShares = chooserCount * 0.85 + userCount * 1.0;
+      const baseShare = remainingAmount / totalShares;
+      
+      nonCustomParticipants.forEach(person => {
+        if (expense.participations[person] === 'choose') {
+          amounts[person] = baseShare * 0.85;
+        } else if (expense.participations[person] === 'use') {
+          amounts[person] = baseShare * 1.0;
+        } else if (expense.participations[person] === 'gift') {
+          amounts[person] = baseShare * 1.0; // Default for gifters without custom amount
+        }
+      });
+    }
+    
+    // Ensure all participants have an amount
+    participants.forEach(person => {
+      if (!amounts[person]) amounts[person] = 0;
+    });
+    
+    return amounts;
+  };
+
+  const calculateBalances = () => {
+    const balances = housemates.reduce((acc, person) => ({...acc, [person]: 0}), {});
+    
+    expenses.forEach(expense => {
+      const splits = calculateSplit(expense);
+      
+      // Person who paid gets credited
+      balances[expense.paidBy] += expense.amount;
+      
+      // Everyone owes their share
+      Object.entries(splits).forEach(([person, amount]) => {
+        balances[person] -= amount;
+      });
+    });
+    
+    return balances;
+  };
+
+  const calculateSettlements = () => {
+    const balances = calculateBalances();
+    const settlements = [];
+    
+    const creditors = Object.entries(balances).filter(([, balance]) => balance > 0.01);
+    const debtors = Object.entries(balances).filter(([, balance]) => balance < -0.01);
+    
+    creditors.forEach(([creditor, creditAmount]) => {
+      debtors.forEach(([debtor, debtAmount]) => {
+        if (Math.abs(debtAmount) > 0.01 && creditAmount > 0.01) {
+          const settlementAmount = Math.min(creditAmount, Math.abs(debtAmount));
+          settlements.push({
+            from: debtor,
+            to: creditor,
+            amount: settlementAmount
+          });
+          
+          balances[creditor] -= settlementAmount;
+          balances[debtor] += settlementAmount;
+        }
+      });
+    });
+    
+    return settlements;
+  };
+
+  const deleteExpense = (id) => {
+    setExpenses(expenses.filter(expense => expense.id !== id));
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'choose': return 'bg-blue-100 text-blue-800';
+      case 'use': return 'bg-green-100 text-green-800';
+      case 'gift': return 'bg-purple-100 text-purple-800';
+      case 'out': return 'bg-gray-100 text-gray-600';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-white">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Housemate Expense Sharing</h1>
+        <p className="text-gray-600">Track shared expenses with participation-based splitting</p>
+      </div>
+
+      {/* Add New Expense */}
+      <div className="bg-gray-50 p-6 rounded-lg mb-8">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Plus size={20} />
+          Add New Expense
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Expense description"
+            value={newExpense.description}
+            onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
+            className="p-2 border rounded-lg"
+          />
+          <input
+            type="number"
+            placeholder="Amount"
+            value={newExpense.amount}
+            onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+            className="p-2 border rounded-lg"
+          />
+          <select
+            value={newExpense.paidBy}
+            onChange={(e) => setNewExpense({...newExpense, paidBy: e.target.value})}
+            className="p-2 border rounded-lg"
+          >
+            {housemates.map(person => (
+              <option key={person} value={person}>{person}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+          {housemates.map(person => (
+            <div key={person} className="p-3 border rounded-lg">
+              <p className="font-medium text-sm mb-2">{person}</p>
+              <select
+                value={newExpense.participations[person]}
+                onChange={(e) => setNewExpense({
+                  ...newExpense,
+                  participations: {...newExpense.participations, [person]: e.target.value}
+                })}
+                className="w-full p-1 border rounded text-sm"
+              >
+                <option value="out">Out</option>
+                <option value="choose">Choose</option>
+                <option value="use">Use</option>
+                <option value="gift">Gift</option>
+              </select>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={addExpense}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2"
+        >
+          <Plus size={16} />
+          Add Expense
+        </button>
+      </div>
+
+      {/* Expenses List */}
+      <div className="space-y-4 mb-8">
+        {expenses.map(expense => {
+          const splits = calculateSplit(expense);
+          
+          return (
+            <div key={expense.id} className="bg-white border rounded-lg p-4">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="font-semibold text-lg">{expense.description}</h3>
+                  <p className="text-gray-600">${expense.amount.toFixed(2)} paid by {expense.paidBy}</p>
+                </div>
+                <button
+                  onClick={() => deleteExpense(expense.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                {housemates.map(person => (
+                  <div key={person} className="p-3 border rounded-lg">
+                    <p className="font-medium text-sm mb-2">{person}</p>
+                    <select
+                      value={expense.participations[person]}
+                      onChange={(e) => updateParticipation(expense.id, person, e.target.value)}
+                      className="w-full p-1 border rounded text-sm mb-2"
+                    >
+                      <option value="out">Out</option>
+                      <option value="choose">Choose</option>
+                      <option value="use">Use</option>
+                      <option value="gift">Gift</option>
+                    </select>
+                    <span className={`px-2 py-1 rounded text-xs ${getStatusColor(expense.participations[person])}`}>
+                      {expense.participations[person]}
+                    </span>
+                    {expense.participations[person] !== 'out' && (
+                      <div className="mt-2">
+                        <input
+                          type="number"
+                          placeholder="Custom amount"
+                          value={expense.customAmounts?.[person] || ''}
+                          onChange={(e) => updateCustomAmount(expense.id, person, e.target.value)}
+                          className="w-full p-1 border rounded text-xs"
+                        />
+                        <p className="text-xs text-gray-600 mt-1">
+                          Split: ${splits[person]?.toFixed(2) || '0.00'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Settlements */}
+      {expenses.length > 0 && (
+        <div className="bg-green-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Calculator size={20} />
+            Settlement Summary
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-medium mb-3 flex items-center gap-2">
+                <Users size={16} />
+                Current Balances
+              </h3>
+              <div className="space-y-2">
+                {Object.entries(calculateBalances()).map(([person, balance]) => (
+                  <div key={person} className="flex justify-between items-center p-2 bg-white rounded">
+                    <span className="font-medium">{person}</span>
+                    <span className={`font-semibold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                      ${balance.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-medium mb-3 flex items-center gap-2">
+                <DollarSign size={16} />
+                Required Payments
+              </h3>
+              <div className="space-y-2">
+                {calculateSettlements().map((settlement, index) => (
+                  <div key={index} className="p-2 bg-white rounded">
+                    <span className="font-medium">{settlement.from}</span>
+                    <span className="text-gray-600"> pays </span>
+                    <span className="font-medium">{settlement.to}</span>
+                    <span className="text-gray-600"> → </span>
+                    <span className="font-semibold text-green-600">${settlement.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+                {calculateSettlements().length === 0 && (
+                  <p className="text-gray-500 italic">All settled up! 🎉</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ExpenseSharingApp;
