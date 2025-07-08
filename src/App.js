@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Calculator, Users, DollarSign } from 'lucide-react';
 
 const ExpenseSharingApp = () => {
-  const [housemates] = useState(['Person 1', 'Person 2', 'Person 3', 'Person 4', 'Person 5']);
+  .countdown-item span:first-child {const [housemates] = useState(['Gili', 'Lena', 'Lukas', 'Nora', 'Philip']);
   const [expenses, setExpenses] = useState([]);
   const [newExpense, setNewExpense] = useState({
     description: '',
