@@ -206,7 +206,7 @@ const ExpenseSharingApp = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 pl-8 bg-white transition-all duration-300">
+    <div className="w-full min-h-screen p-10 bg-gray-50 flex flex-col items-center">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
         <p className="text-gray-600">
@@ -284,7 +284,7 @@ const ExpenseSharingApp = () => {
       </div>
 
       {/* Expenses List */}
-      <div className="space-y-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 w-full max-w-6xl">
         {expenses.map(expense => {
           const splits = calculateSplit(expense);
 
