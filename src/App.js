@@ -206,7 +206,7 @@ const ExpenseSharingApp = () => {
   };
 
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 flex justify-center items-center p-8">
+    <div className="w-screen min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 flex justify-center items-start p-8">
       <div className="flex flex-col w-full max-w-screen-xl bg-white rounded-xl shadow-xl p-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
@@ -287,7 +287,7 @@ const ExpenseSharingApp = () => {
         </div>
 
         {/* Expenses List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-6 mb-8">
           {expenses.map(expense => {
             const splits = calculateSplit(expense);
 
@@ -311,40 +311,39 @@ const ExpenseSharingApp = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                {/* Housemates row */}
+                <div className="flex flex-wrap gap-4 mb-4">
                   {housemates.map(person => (
-                    <div key={person} className="p-3 border rounded-lg hover:bg-gray-50 transition">
-                      <p className="font-medium text-sm mb-2">{person}</p>
+                    <div
+                      key={person}
+                      className="flex flex-col items-center p-2 border rounded-lg hover:bg-gray-50 transition w-32"
+                    >
+                      <p className="font-medium text-sm mb-1">{person}</p>
                       <select
                         value={expense.participations[person]}
                         onChange={e => updateParticipation(expense.id, person, e.target.value)}
-                        className="w-full p-1 border rounded text-sm mb-2"
+                        className="w-full p-1 border rounded text-sm mb-1"
                       >
                         <option value="out">🚫 Out</option>
                         <option value="choose">📝 Choose</option>
                         <option value="use">🍽 Use</option>
                         <option value="gift">🎁 Gift</option>
                       </select>
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${getStatusColor(
-                          expense.participations[person]
-                        )}`}
-                      >
-                        {expense.participations[person]}
-                      </span>
                       {expense.participations[person] !== 'out' && (
-                        <div className="mt-2">
+                        <>
                           <input
                             type="number"
-                            placeholder="Custom amount"
+                            placeholder="Custom €"
                             value={expense.customAmounts?.[person] || ''}
-                            onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
+                            onChange={e =>
+                              updateCustomAmount(expense.id, person, e.target.value)
+                            }
                             className="w-full p-1 border rounded text-xs"
                           />
-                          <p className="text-xs text-gray-600 mt-1">
+                          <p className="text-xs text-gray-500">
                             Split: €{splits[person]?.toFixed(2) || '0.00'}
                           </p>
-                        </div>
+                        </>
                       )}
                     </div>
                   ))}
