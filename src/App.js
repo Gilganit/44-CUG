@@ -315,12 +315,13 @@ const ExpenseSharingApp = () => {
                 </div>
 
                 {/* Housemates row */}
-                <div className="flex flex-wrap gap-4 justify-start items-start w-full">
-                  {housemates.map(person => (
-                    <div
-                      key={person}
-                      className="flex flex-col items-center border rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-300 w-40 min-w-[120px] max-w-[150px] flex-grow-0 flex-shrink-0"
-                    >
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
+  {housemates.map(person => (
+    <div
+      key={person}
+      className="flex flex-col border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-300"
+    >
+
                       <p className="font-medium text-sm mb-1">{person}</p>
                       <select
                         value={expense.participations[person]}
