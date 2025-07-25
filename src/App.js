@@ -207,9 +207,9 @@ const ExpenseSharingApp = () => {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="flex flex-wrap gap-4">
             {housemates.map(person => (
-              <div key={person} className="flex flex-col border p-3 rounded shadow-sm">
+              <div key={person} className="flex flex-col border p-3 rounded shadow-sm w-40">
                 <p className="font-medium text-sm">{person}</p>
                 <select
                   value={newExpense.participations[person]}
@@ -255,9 +255,9 @@ const ExpenseSharingApp = () => {
                     <Trash2 size={20} />
                   </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="flex flex-wrap gap-4">
                   {housemates.map(person => (
-                    <div key={person} className="flex flex-col border p-3 rounded shadow-sm">
+                    <div key={person} className="flex flex-col border p-3 rounded shadow-sm w-40">
                       <p className="text-sm font-medium">{person}</p>
                       <select
                         value={expense.participations[person]}
