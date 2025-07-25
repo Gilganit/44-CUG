@@ -17,8 +17,23 @@ const ExpenseSharingApp = () => {
         Philip: 'gift'
       },
       customAmounts: {}
+    },
+    {
+      id: 2,
+      description: "Lilith’s Midnight Oil",
+      amount: 88.8,
+      paidBy: 'Nora',
+      participations: {
+        Gili: 'gift',
+        Lena: 'choose',
+        Lukas: 'use',
+        Nora: 'use',
+        Philip: 'out'
+      },
+      customAmounts: {}
     }
   ]);
+
   const [newExpense, setNewExpense] = useState({
     description: '',
     amount: '',
@@ -61,177 +76,223 @@ const ExpenseSharingApp = () => {
     setExpenses(
       expenses.map(expense =>
         expense.id === expenseId
-          ? {
-              ...expense,
-              customAmounts: {
-                ...expense.customAmounts,
-                [person]: parseFloat(amount) || 0
-              }
-            }
+          ? { ...expense, customAmounts: { ...expense.customAmounts, [person]: parseFloat(amount) || 0 } }
           : expense
       )
     );
   };
 
   const calculateSplit = expense => {
-    const weights = {
-      choose: 1.2,
-      use: 1.0,
-      gift: 0.2,
-      out: 0
-    };
+    const participants = housemates.filter(person => expense.participations[person] !== 'out');
+    const choosers = participants.filter(person => expense.participations[person] === 'choose');
+    const users = participants.filter(person => expense.participations[person] === 'use');
+    const gifters = participants.filter(person => expense.participations[person] === 'gift');
 
-    const amounts = {};
+    let amounts = {};
     let remainingAmount = expense.amount;
 
-    // Apply custom amounts
-    for (const person of housemates) {
+    // Handle custom amounts first
+    participants.forEach(person => {
       if (expense.customAmounts?.[person]) {
         amounts[person] = expense.customAmounts[person];
         remainingAmount -= expense.customAmounts[person];
       }
-    }
-
-    // Calculate weighted split for remaining participants
-    const weightedParticipants = housemates.filter(
-      person =>
-        expense.participations[person] !== 'out' &&
-        !expense.customAmounts?.[person]
-    );
-
-    const totalWeight = weightedParticipants.reduce((sum, person) => {
-      return sum + (weights[expense.participations[person]] || 0);
-    }, 0);
-
-    weightedParticipants.forEach(person => {
-      const weight = weights[expense.participations[person]] || 0;
-      amounts[person] = (remainingAmount * weight) / totalWeight;
     });
 
-    // Fill in zeros for everyone else
-    housemates.forEach(person => {
-      if (!amounts[person]) amounts[person] = 0;
+    const nonCustom = participants.filter(p => !expense.customAmounts?.[p]);
+
+    const chooserWeight = 1.1;
+    const userWeight = 1;
+    const giftWeight = 0.25;
+
+    const totalWeight = nonCustom.reduce((sum, person) => {
+      const type = expense.participations[person];
+      return (
+        sum +
+        (type === 'choose'
+          ? chooserWeight
+          : type === 'use'
+          ? userWeight
+          : type === 'gift'
+          ? giftWeight
+          : 0)
+      );
+    }, 0);
+
+    nonCustom.forEach(person => {
+      const type = expense.participations[person];
+      const weight =
+        type === 'choose'
+          ? chooserWeight
+          : type === 'use'
+          ? userWeight
+          : type === 'gift'
+          ? giftWeight
+          : 0;
+
+      amounts[person] = (remainingAmount * weight) / totalWeight;
     });
 
     return amounts;
   };
 
-  const calculateBalances = () => {
-    const balances = housemates.reduce((acc, person) => ({ ...acc, [person]: 0 }), {});
-    expenses.forEach(expense => {
-      const splits = calculateSplit(expense);
-      balances[expense.paidBy] += expense.amount;
-      for (const person of housemates) {
-        balances[person] -= splits[person] || 0;
-      }
-    });
-    return balances;
-  };
-
-  const calculateSettlements = () => {
-    const balances = calculateBalances();
-    const settlements = [];
-    const creditors = Object.entries(balances).filter(([, b]) => b > 0.01);
-    const debtors = Object.entries(balances).filter(([, b]) => b < -0.01);
-
-    creditors.forEach(([creditor, credit]) => {
-      for (const [debtor, debt] of debtors) {
-        if (Math.abs(debt) > 0.01 && credit > 0.01) {
-          const amount = Math.min(credit, Math.abs(debt));
-          settlements.push({ from: debtor, to: creditor, amount });
-          balances[creditor] -= amount;
-          balances[debtor] += amount;
-        }
-      }
-    });
-
-    return settlements;
-  };
-
   const deleteExpense = id => {
-    setExpenses(expenses.filter(e => e.id !== id));
+    setExpenses(expenses.filter(expense => expense.id !== id));
+  };
+
+  const getStatusColor = status => {
+    switch (status) {
+      case 'choose':
+        return 'bg-blue-100 text-blue-800';
+      case 'use':
+        return 'bg-green-100 text-green-800';
+      case 'gift':
+        return 'bg-purple-100 text-purple-800';
+      case 'out':
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white">
-      <h1 className="text-3xl font-bold mb-4">44 Dorf. Choose, Use, Gift</h1>
+    <div className="w-full min-h-screen p-10 bg-gray-50 flex flex-col items-center">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
+        <p className="text-gray-600 text-sm">
+          🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
+        </p>
+      </div>
 
-      <div className="mb-6">
-        <input
-          placeholder="Description"
-          value={newExpense.description}
-          onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-          className="border p-2 mr-2"
-        />
-        <input
-          placeholder="Amount"
-          value={newExpense.amount}
-          onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
-          className="border p-2 mr-2"
-        />
-        <select
-          value={newExpense.paidBy}
-          onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })}
-          className="border p-2"
+      {/* New Expense Form */}
+      <div className="bg-white p-6 rounded-lg mb-8 shadow-md w-full max-w-3xl">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Plus size={20} />
+          Add New Expense
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Description"
+            value={newExpense.description}
+            onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
+            className="p-2 border rounded"
+          />
+          <input
+            type="number"
+            placeholder="Amount"
+            value={newExpense.amount}
+            onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
+            className="p-2 border rounded"
+          />
+          <select
+            value={newExpense.paidBy}
+            onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })}
+            className="p-2 border rounded"
+          >
+            <option value="">Select Payer</option>
+            {housemates.map(person => (
+              <option key={person} value={person}>
+                {person}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="overflow-x-auto">
+          <div className="flex gap-4 mb-4">
+            {housemates.map(person => (
+              <div key={person} className="min-w-[120px] border rounded p-2">
+                <p className="font-medium text-sm mb-1">{person}</p>
+                <select
+                  value={newExpense.participations[person]}
+                  onChange={e =>
+                    setNewExpense({
+                      ...newExpense,
+                      participations: { ...newExpense.participations, [person]: e.target.value }
+                    })
+                  }
+                  className="w-full p-1 border rounded text-sm"
+                >
+                  <option value="out">🚫 Out</option>
+                  <option value="choose">📝 Choose</option>
+                  <option value="use">🍽 Use</option>
+                  <option value="gift">🎁 Gift</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={addExpense}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
         >
-          <option value="">Paid by...</option>
-          {housemates.map(person => (
-            <option key={person}>{person}</option>
-          ))}
-        </select>
-        <button onClick={addExpense} className="ml-2 bg-blue-500 text-white p-2 rounded">
-          Add
+          <Plus size={16} />
+          Add Expense
         </button>
       </div>
 
-      {housemates.map(person => (
-        <div key={person} className="mb-4">
-          <strong>{person}</strong>: {calculateBalances()[person].toFixed(2)}
-        </div>
-      ))}
-
-      <hr className="my-6" />
-
-      {expenses.map(expense => {
-        const splits = calculateSplit(expense);
-        return (
-          <div key={expense.id} className="mb-6 border p-4 rounded shadow">
-            <h2 className="text-xl font-semibold">
-              {expense.description} – €{expense.amount.toFixed(2)} (Paid by {expense.paidBy})
-            </h2>
-            <button
-              onClick={() => deleteExpense(expense.id)}
-              className="text-red-500 mt-2 text-sm"
-            >
-              Delete
-            </button>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-              {housemates.map(person => (
-                <div key={person} className="border p-2 rounded">
-                  <p className="font-bold">{person}</p>
-                  <select
-                    value={expense.participations[person]}
-                    onChange={e => updateParticipation(expense.id, person, e.target.value)}
-                    className="w-full mb-1"
-                  >
-                    <option value="out">Out</option>
-                    <option value="choose">Choose</option>
-                    <option value="use">Use</option>
-                    <option value="gift">Gift</option>
-                  </select>
-                  <input
-                    type="number"
-                    value={expense.customAmounts[person] || ''}
-                    onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
-                    placeholder={`Split: €${splits[person].toFixed(2)}`}
-                    className="w-full"
-                  />
+      {/* Expenses */}
+      <div className="grid gap-6 w-full max-w-6xl">
+        {expenses.map(expense => {
+          const splits = calculateSplit(expense);
+          return (
+            <div key={expense.id} className="bg-white border rounded-lg p-4 shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="font-semibold text-lg">{expense.description}</h3>
+                  <p className="text-sm text-gray-600">
+                    €{expense.amount.toFixed(2)} (Paid by {expense.paidBy})
+                  </p>
                 </div>
-              ))}
+                <button
+                  onClick={() => deleteExpense(expense.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <div className="flex gap-4">
+                  {housemates.map(person => (
+                    <div key={person} className="min-w-[140px] border rounded p-2 text-sm">
+                      <p className="font-medium mb-1">{person}</p>
+                      <select
+                        value={expense.participations[person]}
+                        onChange={e => updateParticipation(expense.id, person, e.target.value)}
+                        className="w-full p-1 border rounded mb-1"
+                      >
+                        <option value="out">🚫 Out</option>
+                        <option value="choose">📝 Choose</option>
+                        <option value="use">🍽 Use</option>
+                        <option value="gift">🎁 Gift</option>
+                      </select>
+                      {expense.participations[person] !== 'out' && (
+                        <>
+                          <input
+                            type="number"
+                            placeholder="Custom €"
+                            value={expense.customAmounts?.[person] || ''}
+                            onChange={e =>
+                              updateCustomAmount(expense.id, person, e.target.value)
+                            }
+                            className="w-full p-1 border rounded text-xs mb-1"
+                          />
+                          <p className="text-xs text-gray-500">
+                            Split: €{splits[person]?.toFixed(2) || '0.00'}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };
