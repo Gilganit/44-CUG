@@ -1,131 +1,58 @@
-import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import React from 'react';
 
-const ExpenseSharingApp = () => {
-  const [housemates] = useState(['Gili', 'Lena', 'Lukas', 'Nora', 'Philip']);
-  const [expenses, setExpenses] = useState([
-    {
-      id: 1,
-      description: "Hypatia's Star Maps",
-      amount: 42.5,
-      paidBy: 'Lena',
-      participations: {
-        Gili: 'choose',
-        Lena: 'use',
-        Lukas: 'out',
-        Nora: 'use',
-        Philip: 'gift',
-      },
-      customAmounts: {}
-    }
-  ]);
+const participants = [
+  { name: 'Gili', role: 'Choose', amount: 10.63 },
+  { name: 'Lena', role: 'Use', amount: 10.63 },
+  { name: 'Lukas', role: 'Out', amount: 0 },
+  { name: 'Nora', role: 'Use', amount: 10.63 },
+  { name: 'Philip', role: 'Gift', amount: 10.63 },
+];
 
-  const updateParticipation = (expenseId, person, status) => {
-    setExpenses(prev =>
-      prev.map(exp =>
-        exp.id === expenseId
-          ? { ...exp, participations: { ...exp.participations, [person]: status } }
-          : exp
-      )
-    );
-  };
-
-  const updateCustomAmount = (expenseId, person, amount) => {
-    setExpenses(prev =>
-      prev.map(exp =>
-        exp.id === expenseId
-          ? {
-              ...exp,
-              customAmounts: {
-                ...exp.customAmounts,
-                [person]: parseFloat(amount) || 0
-              }
-            }
-          : exp
-      )
-    );
-  };
-
-  const calculateSplit = expense => {
-    const participants = housemates.filter(p => expense.participations[p] !== 'out');
-    const amounts = {};
-    const total = expense.amount;
-    const share = total / participants.length;
-
-    participants.forEach(p => {
-      if (expense.customAmounts[p]) {
-        amounts[p] = expense.customAmounts[p];
-      } else {
-        amounts[p] = share;
-      }
-    });
-
-    return amounts;
-  };
-
-  const deleteExpense = id => {
-    setExpenses(expenses.filter(e => e.id !== id));
-  };
-
+export default function App() {
   return (
-    <div className="min-h-screen w-full p-6 bg-gradient-to-br from-pink-50 to-blue-50">
-      <h1 className="text-3xl font-bold text-center text-pink-600 mb-8">🧾 Expense Tracker</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white px-8 py-10 font-sans">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold mb-2 flex items-center gap-2">
+          📑 Expense Tracker
+        </h1>
+        <h2 className="text-2xl font-semibold mb-4">Hypatia's Star Maps</h2>
+        <p className="mb-6 text-gray-700">€42.5 paid by Lena</p>
 
-      {expenses.map(expense => {
-        const splits = calculateSplit(expense);
-        return (
-          <div key={expense.id} className="bg-white rounded-xl shadow p-6 mb-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h2 className="text-xl font-semibold">{expense.description}</h2>
-                <p className="text-gray-600">€{expense.amount} paid by {expense.paidBy}</p>
-              </div>
-              <button
-                onClick={() => deleteExpense(expense.id)}
-                className="text-red-500 hover:text-red-700"
-              >
-                <Trash2 size={20} />
-              </button>
+        <div className="flex flex-wrap gap-4 justify-start">
+          {participants.map((p) => (
+            <div
+              key={p.name}
+              className="flex flex-col border rounded shadow p-4 w-52 bg-white"
+            >
+              <div className="font-semibold">{p.name}</div>
+              <select className="mt-2 p-1 border rounded text-sm">
+                <option value="choose" selected={p.role === 'Choose'}>
+                  📝 Choose
+                </option>
+                <option value="use" selected={p.role === 'Use'}>
+                  🍽 Use
+                </option>
+                <option value="gift" selected={p.role === 'Gift'}>
+                  🎁 Gift
+                </option>
+                <option value="out" selected={p.role === 'Out'}>
+                  🚫 Out
+                </option>
+              </select>
+              {p.role !== 'Out' && (
+                <>
+                  <input
+                    className="mt-2 p-1 border rounded text-sm"
+                    placeholder="Custom €"
+                    defaultValue={p.amount}
+                  />
+                  <p className="text-sm text-gray-600 mt-1">€{p.amount.toFixed(2)}</p>
+                </>
+              )}
             </div>
-
-            {/* Horizontal Layout via Grid */}
-            <div className="grid grid-flow-col auto-cols-[minmax(10rem,_1fr)] overflow-x-auto gap-4 pb-2">
-              {housemates.map(person => (
-                <div key={person} className="border rounded p-3 shadow-sm text-sm flex flex-col">
-                  <strong>{person}</strong>
-                  <select
-                    value={expense.participations[person]}
-                    onChange={e => updateParticipation(expense.id, person, e.target.value)}
-                    className="border rounded p-1 my-1"
-                  >
-                    <option value="out">🚫 Out</option>
-                    <option value="choose">📝 Choose</option>
-                    <option value="use">🍽 Use</option>
-                    <option value="gift">🎁 Gift</option>
-                  </select>
-
-                  {expense.participations[person] !== 'out' && (
-                    <>
-                      <input
-                        type="number"
-                        placeholder="Custom €"
-                        value={expense.customAmounts?.[person] || ''}
-                        onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
-                        className="border rounded p-1 text-xs mb-1"
-                      />
-                      <p className="text-xs text-gray-600">
-                        €{splits[person]?.toFixed(2)}
-                      </p>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+          ))}
+        </div>
+      </div>
     </div>
   );
-};
-
-export default ExpenseSharingApp;
+}
