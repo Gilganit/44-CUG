@@ -169,7 +169,9 @@ const ExpenseSharingApp = () => {
     <div className="w-screen min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 flex justify-center items-start p-8">
       <div className="flex flex-col w-full max-w-screen-lg bg-white rounded-xl shadow-xl p-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
+ 	 <h2 className="text-4xl text-pink-600 font-bold">TAILWIND TEST</h2>
+ 	 <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
+  	<p className="text-gray-700 text-lg">
           <p className="text-gray-700 text-lg">🎉 We have a cool app to track our cool vibes about spending together 😎💸✨</p>
         </div>
 
@@ -235,7 +237,7 @@ const ExpenseSharingApp = () => {
         </div>
 
         {/* Expense List */}
-        <div className="grid grid-cols-1 gap-6">
+        <div className="flex flex-col gap-6">
           {expenses.map(expense => {
             const splits = calculateSplit(expense);
             return (
