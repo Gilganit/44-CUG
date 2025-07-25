@@ -171,7 +171,6 @@ const ExpenseSharingApp = () => {
         <div className="mb-8 text-center">
  	 <h2 className="text-4xl text-pink-600 font-bold">TAILWIND TEST</h2>
  	 <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
-  	<p className="text-gray-700 text-lg">
           <p className="text-gray-700 text-lg">🎉 We have a cool app to track our cool vibes about spending together 😎💸✨</p>
         </div>
 
