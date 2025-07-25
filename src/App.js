@@ -31,9 +31,22 @@ const ExpenseSharingApp = () => {
         Philip: 'out'
       },
       customAmounts: {}
+    },
+    {
+      id: 3,
+      description: "Athena’s Olive Wreath",
+      amount: 15.0,
+      paidBy: 'Gili',
+      participations: {
+        Gili: 'choose',
+        Lena: 'use',
+        Lukas: 'gift',
+        Nora: 'out',
+        Philip: 'use'
+      },
+      customAmounts: {}
     }
   ]);
-
   const [newExpense, setNewExpense] = useState({
     description: '',
     amount: '',
@@ -91,49 +104,86 @@ const ExpenseSharingApp = () => {
     let amounts = {};
     let remainingAmount = expense.amount;
 
-    // Handle custom amounts first
     participants.forEach(person => {
-      if (expense.customAmounts?.[person]) {
+      if (expense.customAmounts && expense.customAmounts[person]) {
         amounts[person] = expense.customAmounts[person];
         remainingAmount -= expense.customAmounts[person];
       }
     });
 
-    const nonCustom = participants.filter(p => !expense.customAmounts?.[p]);
+    const nonCustomParticipants = participants.filter(
+      person => !expense.customAmounts || !expense.customAmounts[person]
+    );
 
-    const chooserWeight = 1.1;
-    const userWeight = 1;
-    const giftWeight = 0.25;
+    if (nonCustomParticipants.length > 0) {
+      const chooserCount = choosers.filter(
+        person => !expense.customAmounts || !expense.customAmounts[person]
+      ).length;
+      const userCount = users.filter(
+        person => !expense.customAmounts || !expense.customAmounts[person]
+      ).length;
 
-    const totalWeight = nonCustom.reduce((sum, person) => {
-      const type = expense.participations[person];
-      return (
-        sum +
-        (type === 'choose'
-          ? chooserWeight
-          : type === 'use'
-          ? userWeight
-          : type === 'gift'
-          ? giftWeight
-          : 0)
-      );
-    }, 0);
+      const totalShares = chooserCount * 0.85 + userCount * 1.0;
+      const baseShare = remainingAmount / totalShares;
 
-    nonCustom.forEach(person => {
-      const type = expense.participations[person];
-      const weight =
-        type === 'choose'
-          ? chooserWeight
-          : type === 'use'
-          ? userWeight
-          : type === 'gift'
-          ? giftWeight
-          : 0;
+      nonCustomParticipants.forEach(person => {
+        if (expense.participations[person] === 'choose') {
+          amounts[person] = baseShare * 0.85;
+        } else if (expense.participations[person] === 'use') {
+          amounts[person] = baseShare * 1.0;
+        } else if (expense.participations[person] === 'gift') {
+          amounts[person] = baseShare * 1.0;
+        }
+      });
+    }
 
-      amounts[person] = (remainingAmount * weight) / totalWeight;
+    participants.forEach(person => {
+      if (!amounts[person]) amounts[person] = 0;
     });
 
     return amounts;
+  };
+
+  const calculateBalances = () => {
+    const balances = housemates.reduce((acc, person) => ({ ...acc, [person]: 0 }), {});
+
+    expenses.forEach(expense => {
+      const splits = calculateSplit(expense);
+
+      balances[expense.paidBy] += expense.amount;
+
+      Object.entries(splits).forEach(([person, amount]) => {
+        balances[person] -= amount;
+      });
+    });
+
+    return balances;
+  };
+
+  const calculateSettlements = () => {
+    const balances = calculateBalances();
+    const settlements = [];
+
+    const creditors = Object.entries(balances).filter(([, balance]) => balance > 0.01);
+    const debtors = Object.entries(balances).filter(([, balance]) => balance < -0.01);
+
+    creditors.forEach(([creditor, creditAmount]) => {
+      debtors.forEach(([debtor, debtAmount]) => {
+        if (Math.abs(debtAmount) > 0.01 && creditAmount > 0.01) {
+          const settlementAmount = Math.min(creditAmount, Math.abs(debtAmount));
+          settlements.push({
+            from: debtor,
+            to: creditor,
+            amount: settlementAmount
+          });
+
+          balances[creditor] -= settlementAmount;
+          balances[debtor] += settlementAmount;
+        }
+      });
+    });
+
+    return settlements;
   };
 
   const deleteExpense = id => {
@@ -149,60 +199,64 @@ const ExpenseSharingApp = () => {
       case 'gift':
         return 'bg-purple-100 text-purple-800';
       case 'out':
+        return 'bg-gray-100 text-gray-600';
       default:
         return 'bg-gray-100 text-gray-600';
     }
   };
 
   return (
-    <div className="w-full min-h-screen p-10 bg-gray-50 flex flex-col items-center">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
-        <p className="text-gray-600 text-sm">
-          🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
-        </p>
-      </div>
-
-      {/* New Expense Form */}
-      <div className="bg-white p-6 rounded-lg mb-8 shadow-md w-full max-w-3xl">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Plus size={20} />
-          Add New Expense
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <input
-            type="text"
-            placeholder="Description"
-            value={newExpense.description}
-            onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-            className="p-2 border rounded"
-          />
-          <input
-            type="number"
-            placeholder="Amount"
-            value={newExpense.amount}
-            onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
-            className="p-2 border rounded"
-          />
-          <select
-            value={newExpense.paidBy}
-            onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })}
-            className="p-2 border rounded"
-          >
-            <option value="">Select Payer</option>
-            {housemates.map(person => (
-              <option key={person} value={person}>
-                {person}
-              </option>
-            ))}
-          </select>
+    <div className="w-screen min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 flex justify-center items-start p-8">
+      <div className="flex flex-col w-full max-w-screen-lg bg-white rounded-xl shadow-xl p-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
+          <p className="text-gray-700 text-lg">
+            🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
+          </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="flex gap-4 mb-4">
+        {/* Add New Expense */}
+        <div className="bg-gray-50 p-6 rounded-lg mb-8 shadow hover:shadow-lg transition">
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+            <Plus size={20} />
+            Add New Expense
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Expense description"
+              value={newExpense.description}
+              onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
+              className="p-2 border rounded-lg"
+            />
+            <input
+              type="number"
+              placeholder="Amount"
+              value={newExpense.amount}
+              onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
+              className="p-2 border rounded-lg"
+            />
+            <select
+              value={newExpense.paidBy}
+              onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })}
+              className="p-2 border rounded-lg"
+            >
+              <option value="">-- Select Payer --</option>
+              {housemates.map(person => (
+                <option key={person} value={person}>
+                  {person}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-wrap gap-4 mb-4 justify-start items-start w-full">
             {housemates.map(person => (
-              <div key={person} className="min-w-[120px] border rounded p-2">
+              <div
+                key={person}
+                className="flex flex-col items-center border rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-300 w-40 min-w-[120px] max-w-[150px] flex-grow-0 flex-shrink-0"
+              >
                 <p className="font-medium text-sm mb-1">{person}</p>
                 <select
                   value={newExpense.participations[person]}
@@ -222,47 +276,56 @@ const ExpenseSharingApp = () => {
               </div>
             ))}
           </div>
+
+          <button
+            onClick={addExpense}
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2 transition"
+          >
+            <Plus size={16} />
+            Add Expense
+          </button>
+          <p className="text-sm text-gray-500 mt-2">
+            🐣 Psst... You can always edit later. Nothing’s permanent here.
+          </p>
         </div>
 
-        <button
-          onClick={addExpense}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-        >
-          <Plus size={16} />
-          Add Expense
-        </button>
-      </div>
+        {/* Expenses List */}
+        <div className="grid grid-cols-1 gap-6 mb-8">
+          {expenses.map(expense => {
+            const splits = calculateSplit(expense);
 
-      {/* Expenses */}
-      <div className="grid gap-6 w-full max-w-6xl">
-        {expenses.map(expense => {
-          const splits = calculateSplit(expense);
-          return (
-            <div key={expense.id} className="bg-white border rounded-lg p-4 shadow-md">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="font-semibold text-lg">{expense.description}</h3>
-                  <p className="text-sm text-gray-600">
-                    €{expense.amount.toFixed(2)} (Paid by {expense.paidBy})
-                  </p>
+            return (
+              <div
+                key={expense.id}
+                className="bg-white border rounded-lg p-4 shadow hover:shadow-lg transition"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">{expense.description}</h3>
+                    <p className="text-gray-600">
+                      €{expense.amount.toFixed(2)} paid by {expense.paidBy}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => deleteExpense(expense.id)}
+                    className="text-red-500 hover:text-red-700 transition"
+                  >
+                    <Trash2 size={20} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => deleteExpense(expense.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
 
-              <div className="overflow-x-auto">
-                <div className="flex gap-4">
+                {/* Housemates row */}
+                <div className="flex flex-wrap gap-4 justify-start items-start w-full">
                   {housemates.map(person => (
-                    <div key={person} className="min-w-[140px] border rounded p-2 text-sm">
-                      <p className="font-medium mb-1">{person}</p>
+                    <div
+                      key={person}
+                      className="flex flex-col items-center border rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-300 w-40 min-w-[120px] max-w-[150px] flex-grow-0 flex-shrink-0"
+                    >
+                      <p className="font-medium text-sm mb-1">{person}</p>
                       <select
                         value={expense.participations[person]}
                         onChange={e => updateParticipation(expense.id, person, e.target.value)}
-                        className="w-full p-1 border rounded mb-1"
+                        className="w-full p-1 border rounded text-sm mb-1"
                       >
                         <option value="out">🚫 Out</option>
                         <option value="choose">📝 Choose</option>
@@ -278,7 +341,7 @@ const ExpenseSharingApp = () => {
                             onChange={e =>
                               updateCustomAmount(expense.id, person, e.target.value)
                             }
-                            className="w-full p-1 border rounded text-xs mb-1"
+                            className="w-full p-1 border rounded text-xs"
                           />
                           <p className="text-xs text-gray-500">
                             Split: €{splits[person]?.toFixed(2) || '0.00'}
@@ -289,9 +352,75 @@ const ExpenseSharingApp = () => {
                   ))}
                 </div>
               </div>
+            );
+          })}
+        </div>
+
+        {/* Settlements */}
+        {expenses.length > 0 && (
+          <div className="bg-green-50 p-6 rounded-lg shadow hover:shadow-lg transition">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Calculator size={20} />
+              Settlement Summary
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Users size={16} />
+                  Current Balances
+                </h3>
+                <div className="space-y-2">
+                  {Object.entries(calculateBalances()).map(([person, balance]) => (
+                    <div
+                      key={person}
+                      className="flex justify-between items-center p-2 bg-white rounded hover:bg-gray-50 transition"
+                    >
+                      <span className="font-medium">{person}</span>
+                      <span
+                        className={`font-semibold ${
+                          balance > 0
+                            ? 'text-green-600'
+                            : balance < 0
+                            ? 'text-red-600'
+                            : 'text-gray-600'
+                        }`}
+                      >
+                        €{balance.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <DollarSign size={16} />
+                  Required Payments
+                </h3>
+                <div className="space-y-2">
+                  {calculateSettlements().map((settlement, index) => (
+                    <div
+                      key={index}
+                      className="p-2 bg-white rounded hover:bg-gray-50 transition"
+                    >
+                      <span className="font-medium">{settlement.from}</span>
+                      <span className="text-gray-600"> pays </span>
+                      <span className="font-medium">{settlement.to}</span>
+                      <span className="text-gray-600"> → </span>
+                      <span className="font-semibold text-green-600">
+                        €{settlement.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  {calculateSettlements().length === 0 && (
+                    <p className="text-gray-500 italic">All settled up! 🎉</p>
+                  )}
+                </div>
+              </div>
             </div>
-          );
-        })}
+          </div>
+        )}
       </div>
     </div>
   );
