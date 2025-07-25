@@ -17,20 +17,6 @@ const ExpenseSharingApp = () => {
         Philip: 'gift',
       },
       customAmounts: {}
-    },
-    {
-      id: 2,
-      description: "Lilith's Midnight Oil",
-      amount: 88.8,
-      paidBy: 'Nora',
-      participations: {
-        Gili: 'gift',
-        Lena: 'choose',
-        Lukas: 'use',
-        Nora: 'use',
-        Philip: 'out',
-      },
-      customAmounts: {}
     }
   ]);
 
@@ -43,6 +29,7 @@ const ExpenseSharingApp = () => {
 
   const addExpense = () => {
     if (!newExpense.description || !newExpense.amount || !newExpense.paidBy) return;
+
     const expense = {
       id: Date.now(),
       description: newExpense.description,
@@ -51,6 +38,7 @@ const ExpenseSharingApp = () => {
       participations: { ...newExpense.participations },
       customAmounts: {}
     };
+
     setExpenses([...expenses, expense]);
     setNewExpense({
       description: '',
@@ -74,13 +62,7 @@ const ExpenseSharingApp = () => {
     setExpenses(
       expenses.map(expense =>
         expense.id === expenseId
-          ? {
-              ...expense,
-              customAmounts: {
-                ...expense.customAmounts,
-                [person]: parseFloat(amount) || 0
-              }
-            }
+          ? { ...expense, customAmounts: { ...expense.customAmounts, [person]: parseFloat(amount) || 0 } }
           : expense
       )
     );
@@ -88,54 +70,46 @@ const ExpenseSharingApp = () => {
 
   const calculateSplit = expense => {
     const participants = housemates.filter(person => expense.participations[person] !== 'out');
-    const choosers = participants.filter(person => expense.participations[person] === 'choose');
-    const users = participants.filter(person => expense.participations[person] === 'use');
-    const gifters = participants.filter(person => expense.participations[person] === 'gift');
+    const choosers = participants.filter(p => expense.participations[p] === 'choose');
+    const users = participants.filter(p => expense.participations[p] === 'use');
+    const gifters = participants.filter(p => expense.participations[p] === 'gift');
 
     let amounts = {};
     let remainingAmount = expense.amount;
 
     participants.forEach(person => {
-      if (expense.customAmounts && expense.customAmounts[person]) {
+      if (expense.customAmounts?.[person]) {
         amounts[person] = expense.customAmounts[person];
         remainingAmount -= expense.customAmounts[person];
       }
     });
 
-    const nonCustomParticipants = participants.filter(
-      person => !expense.customAmounts || !expense.customAmounts[person]
-    );
+    const nonCustom = participants.filter(p => !expense.customAmounts?.[p]);
+    const totalShares =
+      choosers.filter(p => !expense.customAmounts?.[p]).length * 1.1 +
+      users.filter(p => !expense.customAmounts?.[p]).length * 1.0 +
+      gifters.filter(p => !expense.customAmounts?.[p]).length * 0.3;
 
-    if (nonCustomParticipants.length > 0) {
-      const chooserCount = choosers.filter(p => !expense.customAmounts[p]).length;
-      const userCount = users.filter(p => !expense.customAmounts[p]).length;
-      const giftCount = gifters.filter(p => !expense.customAmounts[p]).length;
+    const baseShare = totalShares > 0 ? remainingAmount / totalShares : 0;
 
-      const totalShares = chooserCount * 1.1 + userCount * 1.0 + giftCount * 0.3;
-      const baseShare = remainingAmount / totalShares;
-
-      nonCustomParticipants.forEach(person => {
-        const role = expense.participations[person];
-        if (role === 'choose') amounts[person] = baseShare * 1.1;
-        else if (role === 'use') amounts[person] = baseShare * 1.0;
-        else if (role === 'gift') amounts[person] = baseShare * 0.3;
-      });
-    }
-
-    participants.forEach(person => {
-      if (!amounts[person]) amounts[person] = 0;
+    nonCustom.forEach(p => {
+      const type = expense.participations[p];
+      amounts[p] =
+        type === 'choose' ? baseShare * 1.1 :
+        type === 'use' ? baseShare * 1.0 :
+        type === 'gift' ? baseShare * 0.3 : 0;
     });
 
     return amounts;
   };
 
   const calculateBalances = () => {
-    const balances = housemates.reduce((acc, person) => ({ ...acc, [person]: 0 }), {});
-    expenses.forEach(expense => {
-      const splits = calculateSplit(expense);
-      balances[expense.paidBy] += expense.amount;
-      Object.entries(splits).forEach(([person, amount]) => {
-        balances[person] -= amount;
+    const balances = housemates.reduce((acc, p) => ({ ...acc, [p]: 0 }), {});
+    expenses.forEach(exp => {
+      const split = calculateSplit(exp);
+      balances[exp.paidBy] += exp.amount;
+      Object.entries(split).forEach(([p, amt]) => {
+        balances[p] -= amt;
       });
     });
     return balances;
@@ -149,11 +123,11 @@ const ExpenseSharingApp = () => {
 
     creditors.forEach(([creditor, creditAmount]) => {
       debtors.forEach(([debtor, debtAmount]) => {
-        if (Math.abs(debtAmount) > 0.01 && creditAmount > 0.01) {
-          const settlementAmount = Math.min(creditAmount, Math.abs(debtAmount));
-          settlements.push({ from: debtor, to: creditor, amount: settlementAmount });
-          balances[creditor] -= settlementAmount;
-          balances[debtor] += settlementAmount;
+        if (creditAmount > 0.01 && Math.abs(debtAmount) > 0.01) {
+          const amt = Math.min(creditAmount, Math.abs(debtAmount));
+          settlements.push({ from: debtor, to: creditor, amount: amt });
+          balances[creditor] -= amt;
+          balances[debtor] += amt;
         }
       });
     });
@@ -167,56 +141,36 @@ const ExpenseSharingApp = () => {
 
   return (
     <div className="w-screen min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 flex justify-center items-start p-8">
-      <div className="flex flex-col w-full max-w-screen-lg bg-white rounded-xl shadow-xl p-8">
-        <div className="mb-8 text-center">
-          <h2 className="text-4xl text-pink-600 font-bold">TAILWIND TEST</h2>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
-          <p className="text-gray-700 text-lg">🎉 We have a cool app to track our cool vibes about spending together 😎💸✨</p>
+      <div className="w-full max-w-screen-lg bg-white rounded-xl shadow-xl p-6 space-y-10">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-pink-600 mb-1">44 Dorf – Choose, Use, Gift</h1>
+          <p className="text-gray-600 text-lg">🧮 Share expenses with nuance and joy ✨</p>
         </div>
 
         {/* Add Expense */}
-        <div className="bg-gray-50 p-6 rounded-lg mb-8 shadow">
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2"><Plus size={20} /> Add New Expense</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <input
-              type="text"
-              placeholder="Expense description"
-              value={newExpense.description}
-              onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-              className="p-2 border rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Amount"
-              value={newExpense.amount}
-              onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
-              className="p-2 border rounded-lg"
-            />
-            <select
-              value={newExpense.paidBy}
-              onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })}
-              className="p-2 border rounded-lg"
-            >
-              <option value="">-- Select Payer --</option>
-              {housemates.map(person => (
-                <option key={person} value={person}>{person}</option>
-              ))}
+        <div className="bg-gray-50 p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Plus size={18} /> New Expense</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <input type="text" placeholder="Description" value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} className="p-2 border rounded" />
+            <input type="number" placeholder="Amount" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })} className="p-2 border rounded" />
+            <select value={newExpense.paidBy} onChange={e => setNewExpense({ ...newExpense, paidBy: e.target.value })} className="p-2 border rounded">
+              <option value="">-- Paid by --</option>
+              {housemates.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 
-          <div className="flex flex-wrap gap-4 w-full">
+          <div className="flex flex-wrap gap-3">
             {housemates.map(person => (
-              <div key={person} className="flex flex-col border p-3 rounded shadow-sm w-40">
-                <p className="font-medium text-sm">{person}</p>
+              <div key={person} className="flex flex-col border p-3 rounded w-40 text-sm shadow-sm">
+                <strong>{person}</strong>
                 <select
                   value={newExpense.participations[person]}
-                  onChange={e =>
-                    setNewExpense({
-                      ...newExpense,
-                      participations: { ...newExpense.participations, [person]: e.target.value }
-                    })
-                  }
-                  className="w-full p-1 border rounded text-sm"
+                  onChange={e => setNewExpense({
+                    ...newExpense,
+                    participations: { ...newExpense.participations, [person]: e.target.value }
+                  })}
+                  className="border rounded p-1 mt-1"
                 >
                   <option value="out">🚫 Out</option>
                   <option value="choose">📝 Choose</option>
@@ -227,99 +181,87 @@ const ExpenseSharingApp = () => {
             ))}
           </div>
 
-          <button
-            onClick={addExpense}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-          >
-            Add Expense
-          </button>
+          <button onClick={addExpense} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Add Expense</button>
         </div>
 
-        {/* Expense List */}
-        <div className="flex flex-col gap-6">
-          {expenses.map(expense => {
-            const splits = calculateSplit(expense);
-            return (
-              <div key={expense.id} className="bg-white border rounded p-4 shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">{expense.description}</h3>
-                    <p className="text-gray-600">€{expense.amount.toFixed(2)} paid by {expense.paidBy}</p>
+        {/* Expenses */}
+        {expenses.map(expense => {
+          const splits = calculateSplit(expense);
+          return (
+            <div key={expense.id} className="bg-white border rounded p-4 shadow space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold">{expense.description}</h3>
+                  <p className="text-gray-500">€{expense.amount.toFixed(2)} paid by {expense.paidBy}</p>
+                </div>
+                <button onClick={() => deleteExpense(expense.id)} className="text-red-500 hover:text-red-700"><Trash2 size={20} /></button>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {housemates.map(person => (
+                  <div key={person} className="border p-3 rounded w-40 text-sm shadow-sm flex flex-col">
+                    <strong>{person}</strong>
+                    <select
+                      value={expense.participations[person]}
+                      onChange={e => updateParticipation(expense.id, person, e.target.value)}
+                      className="border rounded p-1 mb-1"
+                    >
+                      <option value="out">🚫 Out</option>
+                      <option value="choose">📝 Choose</option>
+                      <option value="use">🍽 Use</option>
+                      <option value="gift">🎁 Gift</option>
+                    </select>
+                    {expense.participations[person] !== 'out' && (
+                      <>
+                        <input
+                          type="number"
+                          placeholder="Custom €"
+                          value={expense.customAmounts?.[person] || ''}
+                          onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
+                          className="border rounded p-1 text-xs mb-1"
+                        />
+                        <p className="text-xs text-gray-600">€{splits[person]?.toFixed(2)}</p>
+                      </>
+                    )}
                   </div>
-                  <button onClick={() => deleteExpense(expense.id)} className="text-red-500 hover:text-red-700">
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-4 w-full">
-                  {housemates.map(person => (
-                    <div key={person} className="border p-3 rounded w-44 shadow-sm flex flex-col text-sm">
-                      <strong>{person}</strong>
-                      <select
-                        value={expense.participations[person]}
-                        onChange={e => updateParticipation(expense.id, person, e.target.value)}
-                        className="border rounded p-1 mb-1"
-                      >
-                        <option value="out">🚫 Out</option>
-                        <option value="choose">📝 Choose</option>
-                        <option value="use">🍽 Use</option>
-                        <option value="gift">🎁 Gift</option>
-                      </select>
-                      {expense.participations[person] !== 'out' && (
-                        <>
-                          <input
-                            type="number"
-                            placeholder="Custom €"
-                            value={expense.customAmounts?.[person] || ''}
-                            onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
-                            className="border rounded p-1 text-xs mb-1"
-                          />
-                          <p className="text-xs text-gray-600">€{splits[person]?.toFixed(2)}</p>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
 
-        {/* Settlement Summary */}
-        {expenses.length > 0 && (
-          <div className="mt-10 bg-green-50 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Calculator size={20} /> Settlement Summary</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium mb-3 flex items-center gap-2"><Users size={16} /> Current Balances</h3>
-                <div className="space-y-2">
-                  {Object.entries(calculateBalances()).map(([person, balance]) => (
-                    <div key={person} className="flex justify-between items-center p-2 bg-white rounded">
-                      <span className="font-medium">{person}</span>
-                      <span className={`font-semibold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                        €{balance.toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+        {/* Summary */}
+        <div className="bg-green-50 p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Calculator size={20} /> Settlement Summary</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-medium mb-2 flex items-center gap-2"><Users size={16} /> Current Balances</h3>
+              <div className="space-y-1">
+                {Object.entries(calculateBalances()).map(([person, balance]) => (
+                  <div key={person} className="flex justify-between bg-white p-2 rounded">
+                    <span>{person}</span>
+                    <span className={`font-semibold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                      €{balance.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div>
-                <h3 className="font-medium mb-3 flex items-center gap-2"><DollarSign size={16} /> Required Payments</h3>
-                <div className="space-y-2">
-                  {calculateSettlements().length === 0 ? (
-                    <p className="text-gray-500 italic">All settled up! 🎉</p>
-                  ) : (
-                    calculateSettlements().map((s, i) => (
-                      <div key={i} className="p-2 bg-white rounded">
-                        <span className="font-medium">{s.from}</span> pays <span className="font-medium">{s.to}</span> →
-                        <span className="font-semibold text-green-600"> €{s.amount.toFixed(2)}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2 flex items-center gap-2"><DollarSign size={16} /> Required Payments</h3>
+              <div className="space-y-1">
+                {calculateSettlements().length === 0 ? (
+                  <p className="text-gray-500 italic">All settled up 🎉</p>
+                ) : (
+                  calculateSettlements().map((s, i) => (
+                    <div key={i} className="bg-white p-2 rounded">
+                      {s.from} pays {s.to} → <span className="font-semibold text-green-600">€{s.amount.toFixed(2)}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
