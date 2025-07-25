@@ -170,16 +170,12 @@ const ExpenseSharingApp = () => {
       <div className="flex flex-col w-full max-w-screen-lg bg-white rounded-xl shadow-xl p-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">44 Dorf. Choose, Use, Gift</h1>
-          <p className="text-gray-700 text-lg">
-            🎉 We have a cool app to track our cool vibes about spending together 😎💸✨
-          </p>
+          <p className="text-gray-700 text-lg">🎉 We have a cool app to track our cool vibes about spending together 😎💸✨</p>
         </div>
 
         {/* Add Expense */}
         <div className="bg-gray-50 p-6 rounded-lg mb-8 shadow">
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            <Plus size={20} /> Add New Expense
-          </h2>
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2"><Plus size={20} /> Add New Expense</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <input
               type="text"
@@ -247,22 +243,20 @@ const ExpenseSharingApp = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="font-semibold text-lg">{expense.description}</h3>
-                    <p className="text-gray-600">
-                      €{expense.amount.toFixed(2)} paid by {expense.paidBy}
-                    </p>
+                    <p className="text-gray-600">€{expense.amount.toFixed(2)} paid by {expense.paidBy}</p>
                   </div>
                   <button onClick={() => deleteExpense(expense.id)} className="text-red-500 hover:text-red-700">
                     <Trash2 size={20} />
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3">
                   {housemates.map(person => (
-                    <div key={person} className="flex flex-col border p-3 rounded shadow-sm w-40">
-                      <p className="text-sm font-medium">{person}</p>
+                    <div key={person} className="border p-3 rounded w-40 shadow-sm flex flex-col text-sm">
+                      <strong>{person}</strong>
                       <select
                         value={expense.participations[person]}
                         onChange={e => updateParticipation(expense.id, person, e.target.value)}
-                        className="p-1 border rounded text-sm mb-1"
+                        className="border rounded p-1 mb-1"
                       >
                         <option value="out">🚫 Out</option>
                         <option value="choose">📝 Choose</option>
@@ -276,9 +270,9 @@ const ExpenseSharingApp = () => {
                             placeholder="Custom €"
                             value={expense.customAmounts?.[person] || ''}
                             onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
-                            className="p-1 border rounded text-xs mb-1"
+                            className="border rounded p-1 text-xs mb-1"
                           />
-                          <p className="text-xs text-gray-500">€{splits[person]?.toFixed(2)}</p>
+                          <p className="text-xs text-gray-600">€{splits[person]?.toFixed(2)}</p>
                         </>
                       )}
                     </div>
@@ -292,9 +286,7 @@ const ExpenseSharingApp = () => {
         {/* Settlement Summary */}
         {expenses.length > 0 && (
           <div className="mt-10 bg-green-50 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Calculator size={20} /> Settlement Summary
-            </h2>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Calculator size={20} /> Settlement Summary</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-medium mb-3 flex items-center gap-2"><Users size={16} /> Current Balances</h3>
