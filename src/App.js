@@ -251,12 +251,38 @@ const ExpenseSharingApp = () => {
             </select>
           </div>
 
-          <div className="flex flex-wrap gap-4 mb-4 justify-start items-start w-full">
-            {housemates.map(person => (
-              <div
-                key={person}
-                className="flex flex-col items-center border rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-300 w-40 min-w-[120px] max-w-[150px] flex-grow-0 flex-shrink-0"
-              >
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
+  {housemates.map(person => {
+    const committed = splits[person]?.toFixed(2) || '0.00';
+    return (
+      <div
+        key={person}
+        className="flex flex-col border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-300"
+      >
+        <p className="font-medium text-sm mb-1">{person}</p>
+        <select
+          value={expense.participations[person]}
+          onChange={e => updateParticipation(expense.id, person, e.target.value)}
+          className="w-full p-1 border rounded text-sm mb-2"
+        >
+          <option value="out">🚫 Out</option>
+          <option value="choose">📝 Choose</option>
+          <option value="use">🍽 Use</option>
+          <option value="gift">🎁 Gift</option>
+        </select>
+        <input
+          type="number"
+          placeholder="Custom €"
+          value={expense.customAmounts?.[person] || ''}
+          onChange={e => updateCustomAmount(expense.id, person, e.target.value)}
+          className="w-full p-1 border rounded text-xs mb-1"
+        />
+        <span className="text-xs text-gray-500">€{committed}</span>
+      </div>
+    );
+  })}
+</div>
+
                 <p className="font-medium text-sm mb-1">{person}</p>
                 <select
                   value={newExpense.participations[person]}
